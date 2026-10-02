@@ -1,0 +1,19 @@
+{
+  "name": "@rubycli/installer",
+  "version": "0.1.1",
+  "description": "RubyCLI: instalador independente, perfis isolados, bridge local e MCP.",
+  "type": "module",
+  "license": "MIT",
+  "author": "RubyCLI",
+  "homepage": "https://app.rubycli.cloud",
+  "engines": { "node": ">=22.16.0" },
+  "bin": { "rubycli": "bin/rubycli.mjs", "rubycli-mcp": "bin/rubycli-mcp.mjs" },
+  "files": ["bin/", "src/", "scripts/", "assets/", "docs/", "install.sh", "install.ps1", "README.md", "LICENSE", "THIRD_PARTY_NOTICES.md", "CHANGELOG.md", "SECURITY.md"],
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "check": "node scripts/check.mjs",
+    "start": "node bin/rubycli.mjs",
+    "pack:check": "npm pack --dry-run"
+  },
+  "dependencies": { "@modelcontextprotocol/sdk": "1.29.0" }
+}

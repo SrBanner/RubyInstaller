@@ -1,0 +1,11 @@
+node_modules/
+*.tgz
+*.zip
+.env
+.env.*
+!.env.example
+.rubycli/
+.ruby-native-test-*/
+coverage/
+*.log
+.DS_Store
