@@ -10,6 +10,8 @@
   <p><a href="https://app.rubycli.cloud">Plataforma</a> · <a href="https://app.rubycli.cloud/docs">API</a> · <a href="docs/CLIENTS.md">Clientes</a> · <a href="docs/COMPATIBILITY.md">Compatibilidade</a></p>
 </div>
 
+
+
 ## O que é
 
 RubyCLI conecta os modelos liberados na sua conta ao terminal, ao Codex CLI, ao Claude Code, ao OpenCode, ao Aider e a clientes MCP. Você escolhe como usar:
