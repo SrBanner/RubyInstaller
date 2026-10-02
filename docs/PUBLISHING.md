@@ -38,6 +38,8 @@ npm pack
 
 O `.tgz` gerado pode ser instalado com `npm install -g ./ARQUIVO_GERADO.tgz` se o usuário preferir instalação npm global. O instalador `install.sh`/`install.ps1` mantém sua própria área privada e não precisa de instalação global.
 
+No Windows, o instalador adiciona o diretório `bin` privado ao PATH do usuário por padrão. Para instalações temporárias ou portáteis, use `install.ps1 -NoPath` ou `node scripts/install.mjs --no-path`. O instalador mantém as outras entradas e registra a entrada adicionada para removê-la na desinstalação.
+
 ## 4. Distribua os comandos corretos
 
 Quando houver uma URL pública real, acrescente ao README o clone do seu repositório e a URL de Releases. Evite anunciar `npx @rubycli/installer` antes de o pacote existir sob controle da sua organização.

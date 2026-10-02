@@ -4,6 +4,7 @@ import { parseArgs } from 'node:util';
 import { rm, readFile, lstat } from 'node:fs/promises';
 import { home, readJSON } from '../src/config.mjs';
 import { assert, safeError } from '../src/errors.mjs';
+import { configureWindowsPath } from '../src/windows-path.mjs';
 try {
   const { values } = parseArgs({ options: { prefix: { type: 'string' }, yes: { type: 'boolean' } }, strict: true });
   assert(values.yes,'CONFIRM_REQUIRED','Use node scripts/uninstall.mjs --yes [--prefix DIRETORIO]. Os perfis serão preservados.');
@@ -16,6 +17,9 @@ try {
   for (const dir of [manifest.current,manifest.previous].filter(Boolean)) {
     assert(path.dirname(dir) === path.join(root,'app') && /^0\.[0-9.]+-[a-f0-9]{8}$/.test(path.basename(dir)),'UNSAFE_PATH','Diretório de instalação inesperado.');
     await rm(dir,{ recursive: true, force: true });
+  }
+  if (process.platform === 'win32' && manifest.pathAdded === true) {
+    await configureWindowsPath(path.join(root,'bin'),{ remove: true });
   }
   await rm(path.join(root,'installation.json')); console.log('Aplicativo removido. Perfis, chaves e históricos RubyCLI preservados. Nenhum cliente foi removido.');
 } catch (error) { const e = safeError(error); console.error(`RubyCLI · ${e.code}: ${e.message}`); process.exitCode = 1; }

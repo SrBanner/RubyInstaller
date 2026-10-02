@@ -42,6 +42,10 @@ Os testes de Codex demonstraram seleção do provider correto nos logs, mas não
 
 ## Repetir
 
+No Windows, os testes de instalação usam `--no-path` ou `-NoPath` para não registrar o prefixo temporário no PATH do usuário. Os testes do PATH cobrem preservação das entradas existentes, diretórios equivalentes sem duplicatas, remoção e tipos do registro. A ponte PowerShell é exercitada em uma chave temporária isolada, sem alterar o PATH real.
+
+Validação local da configuração automática do PATH, em 2026-10-02: Windows, Node.js 24.11.1 e npm 11.19.0; 104 testes aprovados, 3 ignorados e nenhuma falha. A sintaxe e o empacotamento também passaram. Uma atualização real da instalação confirmou que somente a pasta `bin` foi acrescentada ao PATH do usuário, preservando o texto anterior e o tipo do registro; `rubycli --version` retornou `0.1.1` no CMD e no PowerShell iniciados com o ambiente atualizado. Isso não substitui a validação da matriz remota do GitHub Actions.
+
 ```sh
 npm ci --ignore-scripts
 npm run check

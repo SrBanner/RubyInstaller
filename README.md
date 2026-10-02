@@ -36,14 +36,18 @@ No PowerShell:
 
 ```powershell
 .\install.ps1
-& "$env:USERPROFILE\.rubycli\bin\rubycli.cmd" setup
+rubycli setup
 ```
+
+O instalador adiciona a pasta `bin` da RubyCLI ao PATH do seu usuário automaticamente, preservando as outras entradas e sem exigir administrador. O script PowerShell também disponibiliza `rubycli` na sessão atual. Depois, você pode abrir o CMD ou PowerShell e digitar `rubycli`. Se usar Windows Terminal ou o terminal integrado do VS Code, feche e reabra o aplicativo inteiro para ele receber o PATH atualizado.
 
 Se a política do PowerShell não permitir executar o arquivo, use o instalador Node diretamente, sem alterar a política do computador:
 
 ```powershell
 node .\scripts\install.mjs
 ```
+
+Nesse caso, abra um novo terminal para usar `rubycli`, ou execute `& "$env:USERPROFILE\.rubycli\bin\rubycli.cmd" setup` na sessão atual. Para instalar sem alterar o PATH, use `.\install.ps1 -NoPath` ou `node .\scripts\install.mjs --no-path`.
 
 **Atualizando da 0.1.0:** se a instalação parou em `COMMAND_FAILED` ao instalar dependências, extraia o ZIP **0.1.1** em uma nova pasta e execute o instalador dessa pasta. A atualização preserva os perfis RubyCLI existentes. A versão corrigida usa o Node para iniciar o npm no Windows e inclui a codificação necessária para os acentos no Windows PowerShell 5.1.
 
@@ -54,9 +58,9 @@ sh install.sh
 "$HOME/.rubycli/bin/rubycli" setup
 ```
 
-O aplicativo fica em `~/.rubycli/app`, com os comandos em `~/.rubycli/bin`. Não é necessário `sudo`. O instalador mostra o caminho exato e o comando para adicionar a pasta ao PATH da sessão. Para usar apenas `rubycli` em novos terminais, adicione essa pasta ao PATH do seu usuário.
+O aplicativo fica em `~/.rubycli/app`, com os comandos em `~/.rubycli/bin`. Não é necessário `sudo`. No macOS, Linux e WSL, o instalador mostra o caminho exato e o comando para adicionar a pasta ao PATH da sessão. Para usar apenas `rubycli` em novos terminais nessas plataformas, adicione essa pasta ao PATH do seu usuário.
 
-Instale sem modificar nenhuma configuração do sistema. O Node e o npm precisam estar disponíveis antes da instalação.
+O Node e o npm precisam estar disponíveis antes da instalação.
 
 ### Uso portátil, direto do código
 
@@ -220,7 +224,7 @@ Isso não revoga a chave na plataforma e não remove uma variável de ambiente. 
 node scripts/uninstall.mjs --yes
 ```
 
-A desinstalação preserva perfis, chaves e históricos. Clientes existentes permanecem instalados. Mais detalhes em [Operação e solução de problemas](docs/OPERATIONS.md).
+A desinstalação preserva perfis, chaves e históricos. No Windows, remove do PATH somente a entrada adicionada por esta instalação; uma entrada que já existia é preservada. Clientes existentes permanecem instalados. Mais detalhes em [Operação e solução de problemas](docs/OPERATIONS.md).
 
 ## Desenvolvimento
 

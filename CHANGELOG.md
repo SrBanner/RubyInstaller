@@ -2,6 +2,8 @@
 
 ## Não publicado
 
+- No Windows, o instalador adiciona a pasta `bin` ao PATH do usuário automaticamente, sem administrador e preservando as outras entradas. O script PowerShell também atualiza a sessão atual para permitir executar `rubycli` diretamente.
+- Adicionadas as opções `install.ps1 -NoPath` e `node scripts/install.mjs --no-path` para instalações sem alteração do PATH. A desinstalação remove somente a entrada adicionada e registrada por esta instalação.
 - O instalador fornece ao npm o caminho real da pasta temporária, evitando o erro de lockfile do npm 11 quando um diretório ancestral é um link simbólico, como em caminhos temporários do macOS.
 - O teste de instalação cobre caminhos com espaços e ancestrais simbólicos, identifica cada etapa separadamente e reserva tempo para instalação e atualização sem antecipar o timeout do npm.
 

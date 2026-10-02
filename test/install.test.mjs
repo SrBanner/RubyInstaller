@@ -20,10 +20,11 @@ test('instalação privada, atualização, recusa de conflito e desinstalação 
 
   await t.test('instalação offline com espaços e ancestral simbólico', { timeout: 240000 }, async () => {
     const installed = process.platform === 'win32'
-      ? await run('powershell.exe', ['-NoLogo', '-NoProfile', '-NonInteractive', '-File', path.resolve('install.ps1'), '-Prefix', prefix, '-Offline'], { timeout: installTimeout })
-      : await run(process.execPath, [installer, '--prefix', prefix, '--offline'], { timeout: installTimeout });
+      ? await run('powershell.exe', ['-NoLogo', '-NoProfile', '-NonInteractive', '-File', path.resolve('install.ps1'), '-Prefix', prefix, '-Offline', '-NoPath'], { timeout: installTimeout })
+      : await run(process.execPath, [installer, '--prefix', prefix, '--offline', '--no-path'], { timeout: installTimeout });
     assert.equal(installed.code, 0, installed.stderr);
     first = JSON.parse(await readFile(path.join(prefix, 'installation.json'), 'utf8'));
+    assert.equal(first.pathAdded, false, 'instalação com --no-path não deve reivindicar uma entrada no PATH');
     assert.notEqual(await realpath(prefix), prefix, 'o teste deve exercitar um ancestral simbólico');
   });
   if (!first) return;
@@ -48,7 +49,7 @@ test('instalação privada, atualização, recusa de conflito e desinstalação 
   await mkdir(path.join(prefix, 'profiles'), { recursive: true });
   await writeFile(path.join(prefix, 'profiles/keep.txt'), 'KEEP');
   await t.test('atualização offline preserva a instalação anterior', { timeout: 240000 }, async () => {
-    const update = await run(process.execPath, [installer, '--prefix', prefix, '--offline'], { timeout: installTimeout });
+    const update = await run(process.execPath, [installer, '--prefix', prefix, '--offline', '--no-path'], { timeout: installTimeout });
     assert.equal(update.code, 0, update.stderr);
     second = JSON.parse(await readFile(path.join(prefix, 'installation.json'), 'utf8'));
     assert.equal(second.previous, first.current);
@@ -67,7 +68,7 @@ test('instalação privada, atualização, recusa de conflito e desinstalação 
     await mkdir(path.join(conflict, 'bin'), { recursive: true });
     const name = process.platform === 'win32' ? 'rubycli.cmd' : 'rubycli';
     await writeFile(path.join(conflict, 'bin', name), 'existing program');
-    const refused = await run(process.execPath, [installer, '--prefix', conflict]);
+    const refused = await run(process.execPath, [installer, '--prefix', conflict, '--no-path']);
     assert.equal(refused.code, 1);
     assert.equal(await readFile(path.join(conflict, 'bin', name), 'utf8'), 'existing program');
   });

@@ -6,7 +6,7 @@
 | --- | --- |
 | `bin/` | Comandos gerados pelo instalador. |
 | `app/<versão-id>/` | Código e dependências da instalação. |
-| `installation.json` | Identificação da instalação e versão anterior. |
+| `installation.json` | Identificação da instalação, versão anterior e registro da entrada no PATH adicionada pelo instalador Windows. |
 | `profiles/<nome>/config.json` | Endpoint e modelo padrão; sem chave. |
 | `profiles/<nome>/config.json.backup` | Última configuração anterior; sem chave. |
 | `profiles/<nome>/credential.json` | Referência ao cofre, blob DPAPI ou chave em texto se você escolheu `file`. |
@@ -14,6 +14,16 @@
 | `clients/<nome>/<cliente>/` | Estado e históricos mantidos pelo próprio cliente RubyCLI. |
 
 O diretório de instalação e o de estado podem ser diferentes: `--prefix` escolhe o aplicativo; `RUBYCLI_HOME` escolhe estado. O MCP gerado fixa o caminho do estado para que aplicativos gráficos usem o mesmo perfil.
+
+## Comando no Windows
+
+O instalador adiciona somente a pasta `bin` da instalação ao PATH do usuário atual, sem alterar o PATH do sistema e sem exigir administrador. As demais entradas são preservadas; executar o instalador novamente não duplica essa pasta. Com um prefixo personalizado, a entrada usa o `bin` desse prefixo.
+
+Ao executar `.\install.ps1`, o comando também fica disponível na sessão PowerShell atual. A instalação direta por `node scripts/install.mjs` atualiza o PATH persistente; abra um novo terminal depois. Windows Terminal e VS Code já abertos podem continuar transmitindo o ambiente antigo: feche e reabra o aplicativo inteiro.
+
+Para manter a instalação fora do PATH, use `.\install.ps1 -NoPath` ou `node scripts/install.mjs --no-path`. Essa opção não remove entradas que já existam. Execute o comando pelo caminho completo mostrado pelo instalador.
+
+Na desinstalação, a entrada no PATH é removida apenas se o manifesto registrar que foi adicionada por esta instalação. Entradas preexistentes e as pastas de outros aplicativos permanecem. Reinicie os terminais para atualizar o ambiente após a remoção.
 
 ## Variáveis
 
@@ -37,7 +47,7 @@ A fila adaptada contém suporte interno a persistência, mas o aplicativo RubyCL
 
 | Sintoma | Ação |
 | --- | --- |
-| `rubycli` não encontrado | Use o caminho completo mostrado pelo instalador e adicione `bin` ao PATH. |
+| `rubycli` não encontrado | No Windows, reabra o terminal; para Windows Terminal/VS Code, reinicie o aplicativo inteiro. Se instalou com `--no-path`/`-NoPath`, execute novamente sem essa opção ou use o caminho completo. No macOS/Linux/WSL, adicione `bin` ao PATH. |
 | `CLIENT_NOT_FOUND` | Instale o cliente pelo fabricante ou informe `--bin CAMINHO`. |
 | `AUTH_REQUIRED` | Execute setup ou injete `RUBY_API_KEY` no processo. |
 | `API_401` | Verifique se a chave está ativa no painel. |

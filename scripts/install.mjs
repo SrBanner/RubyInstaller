@@ -6,6 +6,7 @@ import { randomUUID } from 'node:crypto';
 import { parseArgs } from 'node:util';
 import { home, privateDir, VERSION, readJSON, atomicWrite } from '../src/config.mjs';
 import { npmCommandSpec, capture } from '../src/process.mjs';
+import { configureWindowsPath } from '../src/windows-path.mjs';
 import { assert, safeError } from '../src/errors.mjs';
 
 const source = path.resolve(fileURLToPath(new URL('..',import.meta.url)));
@@ -14,7 +15,7 @@ const quote = value => "'" + value.replaceAll("'", "'\"'\"'") + "'";
 const literalPS = value => "'" + value.replaceAll("'", "''") + "'";
 async function exists(file) { try { return await lstat(file); } catch (e) { if (e.code === 'ENOENT') return null; throw e; } }
 
-export async function install({ prefix = home(), offline = false } = {}) {
+export async function install({ prefix = home(), offline = false, addToPath = true } = {}) {
   const [major,minor] = process.versions.node.split('.').map(Number);
   assert(major > 22 || (major === 22 && minor >= 16),'NODE_TOO_OLD','Instale Node.js 22.16+ antes de continuar.');
   const root = path.resolve(prefix);
@@ -31,6 +32,7 @@ export async function install({ prefix = home(), offline = false } = {}) {
   }
   const apps = path.join(root,'app'); await privateDir(apps);
   const build = `${VERSION}-${randomUUID().slice(0,8)}`, stage = path.join(apps,'.stage-'+build), final = path.join(apps,build);
+  let pathReady = false, pathWarning;
   await privateDir(stage);
   try {
     for (const name of ['package.json','package-lock.json','bin','src','scripts','assets','docs','install.sh','install.ps1','README.md','LICENSE','THIRD_PARTY_NOTICES.md','SECURITY.md','CHANGELOG.md']) {
@@ -46,6 +48,7 @@ export async function install({ prefix = home(), offline = false } = {}) {
     await rename(stage,final);
     // Prepare every launcher before replacing any current launcher. Roll back on failure.
     const originals = new Map();
+    let pathAdded = previous?.pathAdded === true, addedNow = false;
     try {
       for (const name of names) {
         const entry = path.join(final,'bin',name.startsWith('rubycli-mcp') ? 'rubycli-mcp.mjs' : 'rubycli.mjs');
@@ -59,22 +62,39 @@ export async function install({ prefix = home(), offline = false } = {}) {
         else content = `#!/bin/sh\n# ${MARKER}\nexec ${quote(process.execPath)} ${quote(entry)} "$@"\n`;
         await atomicWrite(file,content); if (process.platform !== 'win32') await chmod(file,0o755);
       }
-      await atomicWrite(manifestPath,JSON.stringify({ app: 'rubycli-installer', version: VERSION, current: final, previous: previous?.current || null, bin, node: process.execPath },null,2)+'\n');
+      if (process.platform === 'win32' && addToPath) {
+        try {
+          const result = await configureWindowsPath(bin);
+          addedNow = result.changed;
+          pathAdded ||= addedNow;
+          pathReady = true;
+        } catch (error) { pathWarning = safeError(error); }
+      }
+      await atomicWrite(manifestPath,JSON.stringify({ app: 'rubycli-installer', version: VERSION, current: final, previous: previous?.current || null, bin, node: process.execPath, pathAdded },null,2)+'\n');
     } catch (error) {
+      if (addedNow) {
+        try { await configureWindowsPath(bin,{ remove: true }); }
+        catch { console.error('RubyCLI · Não foi possível desfazer a entrada no PATH do usuário. Remova somente a pasta bin desta instalação nas Variáveis de Ambiente.'); }
+      }
       for (const [file,old] of originals) { if (old) { await atomicWrite(file,old); if (process.platform !== 'win32') await chmod(file,0o755); } else await rm(file,{ force: true }); }
       throw error;
     }
   } catch (error) { await rm(stage,{ recursive: true, force: true }); await rm(final,{ recursive: true, force: true }); throw error; }
-  console.log(`\nRubyCLI instalada: ${bin}\nSeu PATH e seus clientes foram preservados.\n`);
-  if (process.platform === 'win32') console.log(`Execute: & ${literalPS(path.join(bin,'rubycli.cmd'))} setup\nPara o PATH da sessão: $env:Path = ${literalPS(bin+';')} + $env:Path`);
-  else console.log(`Execute: ${quote(path.join(bin,'rubycli'))} setup\nPara o PATH da sessão: export PATH=${quote(bin)}:"$PATH"`);
-  console.log('Para manter o comando entre sessões, adicione somente esse diretório ao PATH nas configurações do sistema.');
+  console.log(`\nRubyCLI instalada: ${bin}\nSeus clientes foram preservados.\n`);
+  if (process.platform === 'win32' && pathReady) {
+    console.log('PATH do usuário configurado. Abra um novo terminal e execute: rubycli setup\nSe usar Windows Terminal ou VS Code, feche e abra o aplicativo para carregar o novo PATH.');
+  } else {
+    if (pathWarning) console.error(`RubyCLI · Não foi possível configurar o PATH do usuário (${pathWarning.code}). A instalação foi concluída; adicione a pasta bin abaixo nas Variáveis de Ambiente.`);
+    if (process.platform === 'win32') console.log(`Execute: & ${literalPS(path.join(bin,'rubycli.cmd'))} setup\nPara o PATH da sessão: $env:Path = ${literalPS(bin+';')} + $env:Path`);
+    else console.log(`Execute: ${quote(path.join(bin,'rubycli'))} setup\nPara o PATH da sessão: export PATH=${quote(bin)}:"$PATH"`);
+    console.log('Para manter o comando entre sessões, adicione somente esse diretório ao PATH nas configurações do sistema.');
+  }
   return { root, bin, app: final };
 }
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try {
-    const { values } = parseArgs({ options: { prefix: { type: 'string' }, offline: { type: 'boolean' }, help: { type: 'boolean' } }, strict: true });
-    if (values.help) console.log('node scripts/install.mjs [--prefix DIRETORIO] [--offline]\nO prefixo escolhe a instalação; RUBYCLI_HOME escolhe o estado.');
-    else await install(values);
+    const { values } = parseArgs({ options: { prefix: { type: 'string' }, offline: { type: 'boolean' }, 'no-path': { type: 'boolean' }, help: { type: 'boolean' } }, strict: true });
+    if (values.help) console.log('node scripts/install.mjs [--prefix DIRETORIO] [--offline] [--no-path]\nO prefixo escolhe a instalação; RUBYCLI_HOME escolhe o estado.\nNo Windows, configura o PATH do usuário por padrão; --no-path desativa essa etapa.');
+    else await install({ ...values, addToPath: !values['no-path'] });
   } catch (error) { const e = safeError(error); console.error(`RubyCLI · ${e.code}: ${e.message}`); process.exitCode = 1; }
 }
