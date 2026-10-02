@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { cp, readFile, rename, rm, writeFile, chmod, lstat } from 'node:fs/promises';
+import { cp, readFile, rename, rm, writeFile, chmod, lstat, realpath } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import { parseArgs } from 'node:util';
 import { home, privateDir, VERSION, readJSON, atomicWrite } from '../src/config.mjs';
@@ -37,7 +37,10 @@ export async function install({ prefix = home(), offline = false } = {}) {
       if (await exists(path.join(source,name))) await cp(path.join(source,name),path.join(stage,name),{ recursive: true, dereference: false });
     }
     // No lifecycle scripts, global installs, sudo, shell startup edits, or client installs.
-    const spec = await npmCommandSpec(['ci','--prefix',stage,'--omit=dev','--ignore-scripts','--no-audit','--no-fund',...(offline ? ['--offline'] : [])]);
+    // npm 11 can treat a symlinked ancestor (e.g. macOS /var) as a linked
+    // package and incorrectly reject the lockfile. Give npm the physical path.
+    const npmPrefix = await realpath(stage);
+    const spec = await npmCommandSpec(['ci','--prefix',npmPrefix,'--omit=dev','--ignore-scripts','--no-audit','--no-fund',...(offline ? ['--offline'] : [])]);
     console.log('RubyCLI · Instalando dependências em diretório próprio…');
     await capture(spec.file,spec.args,{ timeout: 180000, label: 'npm' });
     await rename(stage,final);

@@ -1,5 +1,10 @@
 # Changelog
 
+## Não publicado
+
+- O instalador fornece ao npm o caminho real da pasta temporária, evitando o erro de lockfile do npm 11 quando um diretório ancestral é um link simbólico, como em caminhos temporários do macOS.
+- O teste de instalação cobre caminhos com espaços e ancestrais simbólicos, identifica cada etapa separadamente e reserva tempo para instalação e atualização sem antecipar o timeout do npm.
+
 ## 0.1.1 — 2026-10-02
 
 - Corrigida a instalação no Windows: o script POSIX `npm` não é mais escolhido no lugar de `npm.cmd`.
