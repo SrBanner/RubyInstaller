@@ -152,6 +152,7 @@ test('install.ps1 usa BOM UTF-8 e acentos legíveis no Windows PowerShell 5.1', 
   const bytes = await readFile(new URL('../install.ps1', import.meta.url));
   assert.deepEqual([...bytes.subarray(0, 3)], [0xef, 0xbb, 0xbf]);
   assert.ok(bytes.toString('utf8').includes('A instalação RubyCLI não foi concluída.'));
-  assert.ok(bytes.toString('utf8').includes('\r\n'));
+  // Git checkouts and source archives may use LF; PowerShell accepts LF and CRLF.
+  assert.match(bytes.toString('utf8'), /\r?\n/);
   assert.ok(!bytes.toString('utf8').includes('\\r\\n'));
 });
